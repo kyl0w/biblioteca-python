@@ -41,7 +41,11 @@ def menu_livros(biblioteca):
         elif escolha == 2:
             biblioteca.ler_livros()
         elif escolha == 3:
-            biblioteca.consultar_livro()
+            try:
+                palavraChave = input("Introduza a palavra chave: ")
+                biblioteca.consultar_livro()
+            except Exception as e:
+                print(e)
         elif escolha == 4:
             try:
                 nome_utilizador = input("Introduza o seu nome de utilizador: ")
