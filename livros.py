@@ -50,6 +50,12 @@ def menu_livros(biblioteca):
             try:
                 nome_utilizador = input("Introduza o seu nome de utilizador: ")
                 palavra_chave = input("Introduza a palavra-chave do livro: ")
+                palavra_chave = input("Introduza a palavra-chave do livro: ")
+                palavra_chave = input("Introduza a palavra-chave do livro: ")
+                palavra_chave = input("Introduza a palavra-chave do livro: ")
+                palavra_chave = input("Introduza a palavra-chave do livro: ")
+                palavra_chave = input("Introduza a palavra-chave do livro: ")
+                palavra_chave = input("Introduza a palavra-chave do livro: ")
                 
                 biblioteca.levantar_livro(nome_utilizador, palavra_chave)
             except Exception as e:
