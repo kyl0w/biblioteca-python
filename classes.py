@@ -8,134 +8,90 @@ numa base de dados PostgreSQL.
 
 """
 
+import re
+from database import conn, cursor
+from validacao import validar_data, verificar_password 
+from datetime import datetime
+
+
+
 class Pessoa:
-    def __init__(self, nomeCompleto, dataDeNascimento, email):
-        self.__nomeCompleto = nomeCompleto
-        self.__dataDeNascimento = dataDeNascimento
+    def __init__(self, nome_completo, data_nasc, email):
+        # Validação dos dados
+        # Verificar se o Nome Completo é uma string e se existe
+        if not isinstance(nome_completo, str) or not nome_completo:
+            raise ValueError("Nome completo inválido")
+        # Verificar se a data o é uma string, se existe e se tem um formato válido
+        if not isinstance(data_nasc, str) or not data_nasc or not validar_data(data_nasc):
+            raise ValueError("Data de nascimento inválida('dd-mm-aaaa')")
+        # Verificar se a data o é uma string, se existe e se tem um formato válido
+        if not isinstance(email, str) or not email:
+            raise ValueError("Email inválido")
+        if not re.match(r"^[a-z0-9]+[._]?[a-z0-9]+[@]\w+[.]\w+$", email):
+            raise ValueError("Formato de email inválido")
+        
+        # Verificar se o email já existe
+        cursor.execute("SELECT id FROM Pessoa WHERE email = ?", (email,))
+        # se o cursor encontrar alguma correspondecia lanca a excecao
+        if cursor.fetchone():
+            raise ValueError("Email já existe")
+        
+        self.__nome_completo = nome_completo
+        self.__data_nasc = data_nasc
         self.__email = email
-
-    def getPessoa(self):
-        print(f"Nome: {self.__nomeCompleto}\nData de nascimento: {self.__dataDeNascimento}\nEmail: {self.__email}")
-
-    def get_nome(self):
-        return self.__nomeCompleto   
          
 class Autor(Pessoa): 
-    def __init__(self, nomeCompleto, dataDeNascimento, email):
+    def __init__(self, nome_completo, data_nasc, email):
         #chamar os atributos da classe pessoa
-        super().__init__(nomeCompleto, dataDeNascimento, email)
-        self.__livros_publicados = []
+        super().__init__(nome_completo, data_nasc, email)
         
-    def get_livros_publicados(self):
-        return self.__livros_publicados
-            
         
 class Utilizador(Pessoa):
-    def __init__(self, numero, nome, username, password, nomeCompleto, dataDeNascimento, email):
-        super().__init__(nomeCompleto=nomeCompleto, dataDeNascimento=dataDeNascimento, email=email)
+    def __init__(self, numero, nome, password, nome_completo, data_nasc, email):
+        super().__init__(nome_completo, data_nasc, email)
+        
+        if not isinstance(numero, int) or not numero:
+            raise ValueError("Número inválido")
+        if not isinstance(nome, str) or not nome:
+            raise ValueError("Nome de utilizador inválido")
+        if not isinstance(password, str) or not verificar_password(password):
+            raise ValueError("Password inválida")
+
         self.__numero = numero
         self.__nome = nome
-        self.__username = username
         self.__password = password
-        
-        self.__historicoEmprestimos = []
-    
-    def get_utilizador_nome(self):
-        return self.__nome
-    
-    def adicionar_emprestimos(self, livro):
-        self.__historicoEmprestimos.append(livro)
-    
-    # Método utilizado para devolver o histórico do utilizador
-    def get_historico(self):
-        # Verifica se existe algum livro emprestado ao utilizador
-        if self.__historicoEmprestimos:
-            print(f"O utilizador {self.__nome} levantou os seguintes livros: ")
-            # A cada livro encontrado vai devolver o sue titulo
-            for livro in self.__historicoEmprestimos:
-                print(f" {livro.get_titulo()}")
-        else:
-            print(f"O utilizador {self.__nome} ainda não levantou livros ")
-    
-    def get_utilizador(self):
-       print(f"""
-             Nome: {self.__nome}
-             Número: {self.__numero}
-        """)
-    
+       
 class Editora:
     def __init__(self, nome, morada, contacto):
+        # Validação do nome
+        if not isinstance(nome, str) or not nome:
+            raise ValueError("Nome da editora inválido")
+        # Validação da morada
+        if not isinstance(morada, str) or not morada:
+            raise ValueError("Morada da editora inválida")
+        # Validação do contacto
+        if not isinstance(contacto, str) or not contacto:
+            raise ValueError("Contacto da editora inválido")
+        # Verifica se já existe editora com o mesmo nome
+        cursor.execute("SELECT id FROM Editora WHERE nome = ?", (nome,))
+        if cursor.fetchone():
+            raise Exception("Editora já existe")
+        
         self.__nome = nome 
         self.__morada = morada
-        self.__contacto = contacto
-
-    def get_editora(self):
-        print(f"""
-            Nome: {self.__nome}
-            Morada: {self.__morada}
-            Contacto: {self.__contacto}
-        """)
-
-    # Método para alterara editora, inicia com os valores como nulos
-    def alterar_editora(self, nome=None, morada=None, contacto=None):
-        # Se o campo nome vier com valor, efetua a alteração caso não, procede
-        if nome:
-            self.set_nome(nome)
-        
-        # Se o campo morada vier com valor, efetua a alteração caso não, procede
-        if morada:
-            self.set_morada(morada)
-
-        # Se o campo morada vier com valor, efetua a alteração caso não, procede
-        if contacto:
-            self.set_contacto(contacto)
-
-        return "-> Editora alterada com sucesso"
-
-    def get_nome(self):
-        return self.__nome
-    
-    def set_nome(self, nome):
-        self.__nome = nome
-
-    def set_morada(self, morada):
-        self.__morada = morada
-
-    def set_contacto(self, contacto):
         self.__contacto = contacto
         
 class Livro:
     # campo ISBN para ter um identificador unico
-    def __init__(self, titulo, listaAutor, editora, palavraChave, ano):
+    def __init__(self, titulo, listaAutor, editora, palavra_chave, ano, isbn):
         self.__titulo = titulo
         self.__listaAutor = listaAutor
         self.__editora = editora # a editora tem que ser do tipo Editora
-        self.__palavraChave = palavraChave
+        self.__palavra_chave = palavra_chave
         self.__ano = ano      
+        self.__isbn = isbn
         self.__disponivel = True  
-    
-    def get_disponivel(self):
-        return self.__disponivel
-    
-    def get_titulo(self):
-        return self.__titulo
-    
-    # Método para devolver todos os dados do livro
-    def get_livro(self):
-        print(f"Titulo: {self.__titulo}")
-        print(f"Editora: {self.__editora}")
-        print(f"Autores: {self.__listaAutor}")
-        print(f"Palavra Chave: {self.__palavraChave}")
-        print(f"Ano: {self.__ano}")
-        print(f"Disponivel: {self.__disponivel}")
 
-    def get_palavraChave(self):
-        return self.__palavraChave # Vai devolver o atributo do tipo str palavraChave
-
-    def get_lista_autor(self):
-        pass
-
-    # 
     def levantar_livro(self):
         self.__disponivel = False
 
@@ -145,166 +101,226 @@ class Livro:
 class Biblioteca:
     def __init__(self, titulo):
         self.__titulo = titulo
-        self.__listaLivros = []
-        self.__listaUtilizadores = []
-        self.__listaEditoras = []
-        self.__listaAutores = []
 
-    #
     # --------- Livros ----------
-    #
 
     # Função para listar todos os livros
     def ler_livros(self):
-        # vai percorrer a list de livros 
-        for livro in self.__listaLivros: # [Livro, livro, livro]
-            livro.get_livro()# vai assumir um objeto Livro da lista e aceder ao seu método
+        cursor.execute("""
+            SELECT l.id, l.titulo, l.palavra_chave, l.ano, l.isbn, e.nome AS nome_editora
+            FROM Livro l
+            LEFT JOIN Editora e ON l.editora_id = e.id
+        """)
 
-    # Funcao para consultar apenas um livro
-    def consultar_livro(self, palavraChave):
-        for livro in self.__listaLivros:
-            if palavraChave == livro.get_palavraChave(): # Verifica se a variavel palavra chave é igual à palavra chave armazena na classe Livro correspondente
-                livro.get_livro()
-                
-    # Função para criar livros
-    def adicionar_livro(self, titulo, lista_autor, nome_editora, palavraChave, ano):
-        # Vai pesquisar a editora pelo nome, se não existir não cria o livro
-        editora = self.get_editora(nome=nome_editora)
-        if not editora:
-            raise Exception("Editora não existe")
-
-        for autor in lista_autor:
-            if not self.get_autor(nome=autor):
-                raise Exception("Autor(s), introduzidos não são válidos")
-        
-        # Vai adicionar à nossa listaLivros um objeto do Livro com os dados que foram enviados
-        livro = self.__listaLivros.append(
-            Livro(
-                titulo=titulo,
-                listaAutor=lista_autor, # do tipo list['nome_autor']
-                editora=editora, # editora é do tipo Editora
-                palavraChave=palavraChave,
-                ano=ano
-            )
-        )
-        
-        if livro:
-            return "Livro criado com sucesso"
-        else:
-            return False
+        return cursor.fetchall()
     
-    def levantar_livro(self, nome_utilizador, palavra_chave):
-       
-        utilizador = None
+    # Funcao para consultar apenas um livro
+    def consultar_livro(self, palavra_chave):
+        cursor.execute("""
+            SELECT l.id, l.titulo, l.palavra_chave, l.ano, l.isbn,
+                   e.nome AS nome_editora
+            FROM Livro l
+            LEFT JOIN Editora e ON l.editora_id = e.id
+            WHERE l.palavra_chave = ?
+        """, (palavra_chave,))
+        livro = cursor.fetchone()
 
-        for u in self.__listaUtilizadores:
-            if u.get_utilizador_nome() == nome_utilizador:
-                utilizador = u
-                break
+        if not livro: 
+            raise(f"Nenhum livro encontrado com a palavra-chave '{palavra_chave}'.")
+        
+        return livro
+        
+    # Função para criar livros
+    def adicionar_livro(self, titulo, lista_autor, editora_id, palavra_chave, ano, isbn):
+        cursor.execute("SELECT id FROM Editora WHERE id = ?", (editora_id,))
+
+        # Verifica se ISBN já existe
+        cursor.execute("SELECT id FROM Livro WHERE isbn = ?", (isbn,))
+        if cursor.fetchone():
+            raise ValueError(f"ISBN '{isbn}' já está registado.")
+        
+        if not cursor.fetchone():
+            raise ValueError("Editora não encontrada")
+
+        for autor_id in lista_autor:
+            cursor.execute("SELECT id FROM Autor WHERE id = ?", (autor_id,))
+            if not cursor.fetchone():
+                raise ValueError(f"Autor {autor_id} não encontrado")
+
+        cursor.execute("INSERT INTO Livro (titulo, editora_id, palavra_chave, ano, isbn) VALUES (?, ?, ?, ?, ?)",
+                       (titulo, editora_id, palavra_chave, ano, isbn))
+        
+        livro_id = cursor.lastrowid
+
+        for autor_id in lista_autor:
+            cursor.execute("INSERT INTO LivroAutor (livro_id, autor_id) VALUES (?, ?)", (livro_id, autor_id))
+        conn.commit()
+
+        return "Livro criado com sucesso!"
+    
+        
+    def levantar_livro(self, nome_utilizador, palavra_chave):
+        # Buscar utilizador
+        cursor.execute("""
+            SELECT U.id AS utilizador_id, P.nome_completo
+            FROM Utilizador U
+            JOIN Pessoa P ON U.id_pessoa = P.id
+            WHERE U.nome = ?
+        """, (nome_utilizador,))
+        utilizador = cursor.fetchone()
         if not utilizador:
             raise Exception("Utilizador não encontrado")
-            return
-        
-        livro = None
-        for l in self.__listaLivros:
-            if l.get_palavraChave() == palavra_chave:
-                livro = l
+        print("1")
+        # Buscar livro
+        cursor.execute("""
+            SELECT L.id AS livro_id, L.titulo, L.disponivel
+            FROM Livro L
+            WHERE L.palavra_chave = ?
+        """, (palavra_chave,))
+        livro = cursor.fetchone()
         if not livro:
-            raise Exception("Livro não encontrado.")
-            return
-        if not livro.get_disponivel():
-            raise Exception("Livro não disponivel.")
-            return
+            raise Exception("Livro não encontrado")
         
-        livro.levantar_livro()
-        utilizador.adicionar_emprestimos(livro)
-        return f"-> O livro {livro.get_titulo()} foi levantado por {nome_utilizador}"
-        
-        
+        print("1")
+        if livro['disponivel'] == 0:
+            raise Exception("Livro não disponível")
 
-    def devolver_livro(self):
-        pass
-    
+        # Registrar empréstimo
+        cursor.execute("""
+            INSERT INTO HistoricoEmprestimo (livro_id, utilizador_id, data_levantamento)
+            VALUES (?, ?, ?)
+        """, (
+            livro['livro_id'],
+            utilizador['utilizador_id'],
+            datetime.now().strftime("%d-%m-%Y %H:%M:%S")
+        ))
+        
+        print("1")
+        # Atualizar disponibilidade do livro
+        cursor.execute("UPDATE Livro SET disponivel = 0 WHERE id = ?", (livro['livro_id'],))
+        conn.commit()
+        
+        print("1")
+        return f"-> O livro '{livro['titulo']}' foi levantado por {utilizador['nome_completo']}"
+
+    def devolver_livro(self, nome_utilizador, palavra_chave):
+        # Buscar utilizador
+        cursor.execute("""
+            SELECT U.id AS utilizador_id, P.nome_completo
+            FROM Utilizador U
+            JOIN Pessoa P ON U.id_pessoa = P.id
+            WHERE U.nome = ?
+        """, (nome_utilizador,))
+        utilizador = cursor.fetchone()
+        if not utilizador:
+            raise Exception("Utilizador não encontrado")
+
+        # Buscar livro
+        cursor.execute("""
+            SELECT L.id AS livro_id, L.titulo
+            FROM Livro L
+            WHERE L.palavra_chave = ?
+        """, (palavra_chave,))
+        livro = cursor.fetchone()
+        if not livro:
+            raise Exception("Livro não encontrado")
+
+        # Atualizar histórico de devolução
+        cursor.execute("""
+            UPDATE HistoricoEmprestimo
+            SET data_devolucao = ?
+            WHERE livro_id = ? AND utilizador_id = ? AND data_devolucao IS NULL
+        """, (
+            datetime.now().strftime("%d-%m-%Y %H:%M:%S"),
+            livro['livro_id'],
+            utilizador['utilizador_id']
+        ))
+
+        # Atualizar disponibilidade do livro
+        cursor.execute("UPDATE Livro SET disponivel = 1 WHERE id = ?", (livro['livro_id'],))
+        conn.commit()
+
+        return f"-> O livro '{livro['titulo']}' foi devolvido por {utilizador['nome_completo']}"
+
     #
     # --------- Utilizadores ----------
     #
 
-    def adicionar_utilizadores(self, nome, numero, password, username):
-        try:
-            self.__listaUtilizadores.append(
-                Utilizador(
-                    nome=nome,
-                    numero=numero,
-                    password=password,
-                    username=username
-                )
-            )
-
-            return "-> Utilizador criado com sucesso"
+    def criar_utilizador(self, numero, nome, password, nome_completo, data_nasc, email):
+        utilizador = Utilizador(numero, nome, password, nome_completo, data_nasc, email)
+        cursor.execute("INSERT INTO Pessoa (nome_completo, data_nasc, email) VALUES (?, ?, ?)",
+                       (nome_completo, data_nasc, email))
+        pessoa_id = cursor.lastrowid
+        cursor.execute("INSERT INTO Utilizador (id_pessoa, numero, nome, password) VALUES (?, ?, ?, ?)",
+                       (pessoa_id, numero, nome, password))
+        conn.commit()
+        return f"Utilizador '{nome}' criado com sucesso."
         
-        except Exception as e:
-            return f"Ocorreu um erro: {e}"
         
-    def listar_utilizadores(self):
-        for utilizador in self.__listaUtilizadores:
-            utilizador.get_utilizador()
+    def listar_utilizadores(self, ):
+        cursor.execute("""SELECT u.id, u.numero, u.nome, u.password, p.nome_completo, p.data_nasc, p.email
+                          FROM Utilizador u JOIN Pessoa p ON u.id_pessoa = p.id""")
+        return cursor.fetchall()
 
-    #
+    def pesquisar_utilizador(self, nome=None, email=None):
+        if nome:
+            cursor.execute("""
+                SELECT U.id AS utilizador_id,
+                    U.numero,
+                    U.nome,
+                    P.nome_completo,
+                    P.data_nasc,
+                    P.email
+                FROM Utilizador U
+                JOIN Pessoa P ON U.id_pessoa = P.id
+                WHERE U.nome = ?
+            """, (nome,))
+        elif email:
+            cursor.execute("""
+                SELECT U.id AS utilizador_id,
+                    U.numero,
+                    U.nome,
+                    P.nome_completo,
+                    P.data_nasc,
+                    P.email
+                FROM Utilizador U
+                JOIN Pessoa P ON U.id_pessoa = P.id
+                WHERE P.email = ?
+            """, (email,))
+        else:
+            raise Exception("Necessário pelo menos um valor de pesquisa: nome ou email")
+
+        utilizador = cursor.fetchone()
+
+        if utilizador: return utilizador
+
+        raise Exception("Utilizador não encontrado")
+
     # --------- Autores ----------
-    #
          
-    def adicionar_autor(self, nome, data_nasc, email):
-        self.__listaAutores.append(
-            Autor(
-                nomeCompleto=nome,
-                dataDeNascimento=data_nasc,
-                email=email
-            )
-        )
-
-        return "Autor criado com sucesso"
+    def adicionar_autor(self, nome_completo, data_nasc, email):
+        autor = Autor(nome_completo, data_nasc, email)
+        cursor.execute("INSERT INTO Pessoa (nome_completo, data_nasc, email) VALUES (?, ?, ?)",
+                       (nome_completo, data_nasc, email))
+        pessoa_id = cursor.lastrowid
+        cursor.execute("INSERT INTO Autor (id_pessoa) VALUES (?)", (pessoa_id,))
+        conn.commit()
+        return "Autor criado com sucesso."
 
     def listar_autores(self):
-        for autor in self.__listaAutores:
-            autor.get_nome()
-
-    # Pesquisa autor pelo nome ou pelo email
-    def get_autor(self, nome=None, email=None):
-        if nome:
-            for autor in self.__listaAutores:
-                if autor.get_nome() == nome:
-                    return True
-        elif email:
-            for autor in self.__listaAutores:
-                if autor.get_email() == email:
-                    return True
-        return False
-
-    #
+        cursor.execute("""SELECT A.id, P.nome_completo, P.data_nasc, P.email
+                          FROM Autor A JOIN Pessoa P ON A.id_pessoa = P.id""")
+        return cursor.fetchall()
+    
     # --------- Editoras ----------
-    #
 
     def adicionar_editora(self, nome, morada, contacto):
-        self.__listaEditoras.append(
-            Editora(
-                nome=nome,
-                morada=morada,
-                contacto=contacto
-            )
-        )
-
-        return "-> Editora criada com sucesso"
+        editora = Editora(nome, morada, contacto)
+        cursor.execute("INSERT INTO Editora (nome, morada, contacto) VALUES (?, ?, ?)",
+                       (nome, morada, contacto))
+        conn.commit()
+        return "Editora criada com sucesso."
     
     def listar_editoras(self):
-        for editora in self.__listaEditoras:
-            editora.get_editora()
-
-    # Vai buscar a editora através do nome
-    def get_editora(self, nome=None):
-        for editora in self.__listaEditoras:
-            # vai buscar o nome da editora atual no ciclo
-            nome_editora = editora.get_nome()
-            if nome_editora == nome:
-                # retorna um instancia de Editora
-                return editora
-        return
+        cursor.execute("SELECT id, nome, morada, contacto FROM Editora")
+        return cursor.fetchall()

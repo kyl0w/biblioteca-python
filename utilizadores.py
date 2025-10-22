@@ -1,47 +1,24 @@
 import re
 from validacao import getInt
 
-# Verificao da segurança da password
-def verificar_password(password):
-
-
-    if len(password) < 8:
-        raise Exception("A palavra passe tem que ter 8 caracteres")
-
-    if not re.search(r"[a-z]", password):
-        raise Exception("A password tem que ter uma minuscula")
-
-    if not re.search(r"[A-Z]", password):
-        raise Exception("A password tem que ter uma maiuscula")
-
-    if not re.search(r"\d", password):
-        raise Exception("A password tem que ter um numero")
-
-    if not re.search(r"[@$!%*?&.,:]", password):
-        raise Exception("A password tem que ter um caracter especial")
-
-    print("Palavra passe válida.")
-    return True
-
 # Verificar dados do utilizador
-def login(username, password, biblioteca):
-    utilizador = biblioteca.get_utilizador(username=username)
-
+def login(nome, password, biblioteca):
     try:
+        utilizador = biblioteca.pesquisar_utilizador(nome=nome)
         if not utilizador:
             raise Exception("Nome de utilizador inválido")
-        if not utilizador.get_password(password):
+        if not utilizador["password"] != password:
             raise Exception("Password incorreta")
         return True
     except Exception as e:
         print(e)
-        return False
     
 def menu_utilizadores(biblioteca):
     while True:
         print("\n------ Gestão de Livros ------")
         print("1 - Adicionar Utilizador")
         print("2 - Listar Utilizadores")
+        print("3 - Listar Emprestimos")
         print("0 - Voltar ao Menu Principal")
         print("------------------------------")
 
@@ -49,15 +26,56 @@ def menu_utilizadores(biblioteca):
         
         if escolha == 1:
             try:
+                nome_completo = input("Introduza o seu nome completo: ")
+                data_nasc = input("Introduza a sua data de nascimento: ")
+                email = input("Introduza o seu email: ")
                 nome = input("Introduza o seu nome: ")
                 numero = getInt("numero")
-                username = input("Introduza o seu username: ")
-                password = input("Introduza a sua palavra: ")
-                verificar_password(password)
-                biblioteca.adicionar_utilizadores(nome=nome, numero=numero, username=username, password=password)
+                password = input("Introduza a sua palavra-passe: ")
+                novo_utilizador = biblioteca.criar_utilizador(
+                    nome_completo=nome_completo,
+                    email=email,
+                    data_nasc=data_nasc,
+                    nome=nome, 
+                    numero=numero, 
+                    password=password,
+                )
+                print(novo_utilizador)
             except Exception as e:
                 print(f"Ocorreu um erro ao criar utilizador: {e}")
-        elif escolha == 6:
+        elif escolha == 2:
+            try:
+                utilizadores = biblioteca.listar_utilizadores()
+                
+                campos = ['id', 'numero', 'nome', 'password', 'nome_completo', 'data_nasc', 'email']
+
+                # Transformar tuplas(formato da resposta do SQLite) em dicionários e imprimir
+                # Ciclo pra percorrer os utilizadores devolvidos
+                for u in utilizadores:
+                    # neste for usamos o zip, que é uma função para combinar duas listas
+                    for campo, valor in zip(campos, u):
+                        # escreve os valores formatados
+                        print(f"{campo}: {valor}")
+                    # dá print de 40 "*""
+                    print("-" * 40)
+            except Exception as e:
+                print(f"Ocorreu um erro: {e}")
+        elif escolha == 3:
+            try:
+                email = input("Introduza o seu email: ")
+                nome = input("Introduza o seu nome: ")
+                utilizador = biblioteca.pesquisar_utilizador(nome, email)
+                # Transformar o resultado num dicionário
+                campos = ["id", "numero", "nome", "nome_completo", "data_nasc", "email"]
+                # neste for usamos o zip, que é uma função para combinar duas listas
+                for campo, valor in zip(campos, u):
+                    # escreve os valores formatados
+                    print(f"{campo}: {valor}")
+            except Exception as e:
+                print(f"Ocorreu um erro: {e}")
+        elif escolha == 4:
+            pass
+        elif escolha == 0:
             break
         else:
             print("Opção inválida")

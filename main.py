@@ -3,7 +3,7 @@
 # Thomas Bergereau 146131-B / tjbergereau@emfa.gov.pt
 
 import re
-import connect
+import database
 import os
 from classes import Biblioteca
 from utilizadores import menu_utilizadores

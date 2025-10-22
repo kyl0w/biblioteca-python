@@ -2,27 +2,37 @@ from validacao import getInt
 
 def menu_editoras(biblioteca):
     while True:
-        print("\n------ Gestão de Livros ------")
+        print("\n------ Gestão de Editoras ------")
         print("1 - Adicionar Editora")
         print("2 - Listar Editoras")
         print("0 - Voltar ao Menu Principal")
         print("------------------------------")
 
-        #
-        escolha = getInt("escolha")
+        escolha = getInt("Escolha")
 
-        # If's encadeados para escolher a opção do utilizador
         if escolha == 1:
             try:
-                nome = input("Introduza o nome da editora: ") # O nome tem que ser único
-                morada = input("Introduza a morada  da editora: ")
+                nome = input("Introduza o nome da editora: ")
+                morada = input("Introduza a morada da editora: ")
                 contacto = input("Introduza o contacto da editora: ")
 
-                novaEditora = biblioteca.adicionar_editora(nome=nome, morada=morada, contacto=contacto)
-                print(novaEditora)
+                resultado = biblioteca.adicionar_editora(nome=nome, morada=morada, contacto=contacto)
+                print(resultado)
             except Exception as e:
-                print("Ocorreu um erro: {e}")
+                print(f"Ocorreu um erro: {e}")
+
         elif escolha == 2:
-            biblioteca.listar_editoras()
-        else:
+            try:
+                editoras = biblioteca.listar_editoras()
+                if editoras:
+                    for e in editoras:
+                        print(f"ID: {e['id']}, Nome: {e['nome']}, Morada: {e['morada']}, Contacto: {e['contacto']}")
+                else:
+                    print("Nenhuma editora registada.")
+            except Exception as e:
+                print(f"Ocorreu um erro ao listar editoras: {e}")
+
+        elif escolha == 0:
             break
+        else:
+            print("Opção inválida")
